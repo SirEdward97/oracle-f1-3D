@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Red Bull Racing RB22 | Banco de homologación 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Paleta fundamentada en la librea Jacquard 2026 del RB22 y sala de metrología */
+            --cobalto-boveda: #081538;
+            --acero-panel: rgba(10, 23, 58, 0.84);
+            --acero-panel-solido: #0D1E4A;
+            --blanco-calibracion: #F2F5FA;
+            --gris-alumina: #9FB0C9;
+            --ambar-sol: #F3B108;
+            --carmesi-toro: #E31837;
+            --borde-estructural: rgba(242, 245, 250, 0.16);
+            --borde-activo: rgba(243, 177, 8, 0.85);
+
+            --font-titular: 'Big Shoulders Display', sans-serif;
+            --font-cuerpo: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body[data-ambiente="claro"] {
+            --cobalto-boveda: #DCE3EC;
+            --acero-panel: rgba(238, 242, 248, 0.88);
+            --acero-panel-solido: #E4EAF2;
+            --blanco-calibracion: #091533;
+            --gris-alumina: #425575;
+            --ambar-sol: #C48200;
+            --carmesi-toro: #C8102E;
+            --borde-estructural: rgba(9, 21, 51, 0.16);
+            --borde-activo: rgba(200, 16, 46, 0.75);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--cobalto-boveda);
+            color: var(--blanco-calibracion);
+            font-family: var(--font-cuerpo);
+            font-size: 15px;
+            line-height: 1.5;
+            font-variant-numeric: tabular-nums;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+        }
+
+        canvas {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            cursor: grab;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Maquetación asimétrica: columna técnica izquierda y gran lienzo derecho despejado */
+        .interfaz-homologacion {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: grid;
+            grid-template-columns: minmax(320px, 380px) 1fr;
+            grid-template-rows: auto 1fr auto;
+            padding: 24px 28px;
+            gap: 18px;
+        }
+
+        .panel-lateral,
+        .estaciones-chasis,
+        .marcadores-capa {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        body.vista-limpia .panel-lateral,
+        body.vista-limpia .estaciones-chasis,
+        body.vista-limpia .marcadores-capa {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Cabecera: identidad de chasis y herramientas de entorno */
+        .cabecera-banco {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .identidad-monoplaza {
+            pointer-events: auto;
+            display: flex;
+            align-items: stretch;
+            gap: 14px;
+        }
+
+        .dorsal-placa {
+            background: var(--carmesi-toro);
+            color: #FFFFFF;
+            font-family: var(--font-titular);
+            font-weight: 800;
+            font-size: 2.75rem;
+            line-height: 1;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+        }
+
+        .bloque-titulo h1 {
+            font-family: var(--font-titular);
+            font-weight: 800;
+            font-size: clamp(1.95rem, 2.8vw, 2.65rem);
+            line-height: 0.96;
+            letter-spacing: 0.01em;
+            color: var(--blanco-calibracion);
+        }
+
+        .subtitulo-homologacion {
+            margin-top: 5px;
+            font-size: 0.85rem;
+            color: var(--gris-alumina);
+            max-width: 54ch;
+        }
+
+        .acciones-entorno {
+            pointer-events: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .boton-accion {
+            appearance: none;
+            background: var(--acero-panel);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: var(--blanco-calibracion);
+            border: 1px solid var(--borde-estructural);
+            padding: 9px 14px;
+            font-family: var(--font-cuerpo);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%);
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .boton-accion:hover {
+            border-color: var(--ambar-sol);
+        }
+
+        .boton-accion:focus-visible,
+        .boton-modo:focus-visible,
+        .boton-estacion:focus-visible,
+        .anclaje-3d:focus-visible {
+            outline: 2px solid var(--ambar-sol);
+            outline-offset: 2px;
+        }
+
+        .boton-accion[aria-pressed="true"] {
+            border-color: var(--borde-activo);
+            background: var(--acero-panel-solido);
+        }
+
+        .indicador-estado {
+            width: 7px;
+            height: 7px;
+            background: var(--gris-alumina);
+            display: inline-block;
+        }
+
+        .boton-accion[aria-pressed="true"] .indicador-estado {
+            background: var(--ambar-sol);
+        }
+
+        /* Columna izquierda única: ficha de estación + reglaje activo */
+        .panel-lateral {
+            grid-column: 1 / 2;
+            align-self: center;
+            pointer-events: auto;
+            background: var(--acero-panel);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--borde-estructural);
+            border-left: 3px solid var(--ambar-sol);
+            padding: 20px 22px;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+        }
+
+        .cota-referencia {
+            display: inline-block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--ambar-sol);
+            margin-bottom: 4px;
+        }
+
+        .panel-lateral h2 {
+            font-family: var(--font-titular);
+            font-weight: 700;
+            font-size: 1.8rem;
+            line-height: 1.04;
+            margin-bottom: 8px;
+            color: var(--blanco-calibracion);
+        }
+
+        .descripcion-estacion {
+            font-size: 0.88rem;
+            line-height: 1.52;
+            color: var(--gris-alumina);
+            max-width: 56ch;
+            margin-bottom: 14px;
+        }
+
+        .tabla-especificaciones {
+            width: 100%;
+            border-collapse: collapse;
+            border-top: 1px solid var(--borde-estructural);
+        }
+
+        .tabla-especificaciones tr {
+            border-bottom: 1px solid var(--borde-estructural);
+        }
+
+        .tabla-especificaciones th,
+        .tabla-especificaciones td {
+            padding: 7px 0;
+            text-align: left;
+            font-size: 0.81rem;
+        }
+
+        .tabla-especificaciones th {
+            font-weight: 500;
+            color: var(--gris-alumina);
+            padding-right: 10px;
+        }
+
+        .tabla-especificaciones td {
+            font-weight: 600;
+            color: var(--blanco-calibracion);
+            text-align: right;
+        }
+
+        /* Subbloque integrado de aerodinámica activa 2026 */
+        .bloque-aerodinamica {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--borde-estructural);
+        }
+
+        .cabecera-aero {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+
+        .cabecera-aero strong {
+            font-size: 0.83rem;
+            color: var(--blanco-calibracion);
+        }
+
+        .cabecera-aero span {
+            font-size: 0.78rem;
+            color: var(--ambar-sol);
+            font-weight: 600;
+        }
+
+        .selector-modo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .boton-modo {
+            appearance: none;
+            background: transparent;
+            border: 1px solid var(--borde-estructural);
+            color: var(--gris-alumina);
+            padding: 8px 10px;
+            text-align: left;
+            font-family: var(--font-cuerpo);
+            cursor: pointer;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .boton-modo strong {
+            display: block;
+            font-size: 0.81rem;
+            color: var(--blanco-calibracion);
+        }
+
+        .boton-modo span {
+            font-size: 0.72rem;
+        }
+
+        .boton-modo[aria-checked="true"] {
+            border-color: var(--ambar-sol);
+            background: rgba(243, 177, 8, 0.11);
+            color: var(--blanco-calibracion);
+        }
+
+        .pista-barra {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            display: flex;
+            overflow: hidden;
+        }
+
+        .segmento-termico {
+            background: var(--carmesi-toro);
+            height: 100%;
+            width: 62%;
+            transition: width 0.35s ease;
+        }
+
+        .segmento-electrico {
+            background: var(--ambar-sol);
+            height: 100%;
+            width: 38%;
+            transition: width 0.35s ease;
+        }
+
+        .leyenda-reparto {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.73rem;
+            color: var(--gris-alumina);
+            margin-top: 5px;
+        }
+
+        /* Pie: selector longitudinal de estaciones del chasis */
+        .estaciones-chasis {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .lista-estaciones {
+            pointer-events: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .boton-estacion {
+            appearance: none;
+            background: var(--acero-panel);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--borde-estructural);
+            color: var(--blanco-calibracion);
+            padding: 9px 14px;
+            text-align: left;
+            font-family: var(--font-cuerpo);
+            cursor: pointer;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .boton-estacion:hover {
+            border-color: var(--ambar-sol);
+        }
+
+        .boton-estacion[aria-current="true"] {
+            border-color: var(--ambar-sol);
+            border-bottom-width: 3px;
+            background: var(--acero-panel-solido);
+        }
+
+        .boton-estacion .cota-mini {
+            display: block;
+            font-size: 0.71rem;
+            color: var(--gris-alumina);
+            margin-bottom: 1px;
+        }
+
+        .boton-estacion[aria-current="true"] .cota-mini {
+            color: var(--ambar-sol);
+        }
+
+        .boton-estacion .nombre-estacion {
+            font-size: 0.84rem;
+            font-weight: 600;
+        }
+
+        .guia-interaccion {
+            pointer-events: auto;
+            font-size: 0.77rem;
+            color: var(--gris-alumina);
+            background: var(--acero-panel);
+            border: 1px solid var(--borde-estructural);
+            padding: 8px 13px;
+        }
+
+        /* Retículas ópticas discretas sobre el monoplaza (sin tapar la carrocería) */
+        .marcadores-capa {
+            position: fixed;
+            inset: 0;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .anclaje-3d {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 24px;
+            height: 24px;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+            background: rgba(8, 21, 56, 0.78);
+            border: 1.5px solid var(--ambar-sol);
+            color: var(--blanco-calibracion);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .anclaje-3d::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            background: var(--ambar-sol);
+        }
+
+        .etiqueta-anclaje {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--acero-panel-solido);
+            border: 1px solid var(--ambar-sol);
+            color: var(--blanco-calibracion);
+            padding: 3px 8px;
+            font-family: var(--font-cuerpo);
+            font-size: 0.73rem;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease;
+        }
+
+        .anclaje-3d:hover,
+        .anclaje-3d:focus-visible,
+        .anclaje-3d[data-activo="true"] {
+            background: var(--ambar-sol);
+            border-color: #FFFFFF;
+        }
+
+        .anclaje-3d:hover::before,
+        .anclaje-3d:focus-visible::before,
+        .anclaje-3d[data-activo="true"]::before {
+            background: #081538;
+        }
+
+        .anclaje-3d:hover .etiqueta-anclaje,
+        .anclaje-3d:focus-visible .etiqueta-anclaje,
+        .anclaje-3d[data-activo="true"] .etiqueta-anclaje {
+            opacity: 1;
+        }
+
+        /* Pantalla de apertura única y estado de error orientativo */
+        .velo-apertura {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: #081538;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            transition: opacity 0.55s ease, visibility 0.55s ease;
+        }
+
+        .velo-apertura.oculto {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .caja-apertura {
+            width: min(460px, 100%);
+            border-left: 3px solid var(--ambar-sol);
+            padding-left: 20px;
+        }
+
+        .caja-apertura h2 {
+            font-family: var(--font-titular);
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .caja-apertura p {
+            color: var(--gris-alumina);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            max-width: 50ch;
+        }
+
+        .pista-carga {
+            width: 100%;
+            height: 4px;
+            background: rgba(242, 245, 250, 0.14);
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .relleno-carga {
+            height: 100%;
+            width: 0%;
+            background: var(--ambar-sol);
+            transition: width 0.15s ease;
+        }
+
+        .estado-carga-texto {
+            font-size: 0.8rem;
+            color: var(--blanco-calibracion);
+            font-weight: 600;
+        }
+
+        .aviso-error {
+            display: none;
+            margin-top: 14px;
+            padding: 14px;
+            background: rgba(227, 24, 55, 0.16);
+            border: 1px solid var(--carmesi-toro);
+            font-size: 0.84rem;
+            color: var(--blanco-calibracion);
+        }
+
+        /* Adaptabilidad para pantallas medianas y móviles */
+        @media (max-width: 960px) {
+            .interfaz-homologacion {
+                grid-template-columns: 1fr;
+                padding: 16px;
+            }
+
+            .panel-lateral {
+                align-self: end;
+                max-width: 420px;
+                padding: 16px;
+            }
+
+            .guia-interaccion {
+                display: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .dorsal-placa {
+                font-size: 2rem;
+                padding: 6px 10px;
+            }
+
+            .subtitulo-homologacion,
+            .descripcion-estacion {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body data-ambiente="boveda">
+
+    <!-- Secuencia única de apertura y orientación en caso de fallo -->
+    <div class="velo-apertura" id="veloApertura" role="status" aria-live="polite">
+        <div class="caja-apertura">
+            <h2>Calibrando chasis RB22</h2>
+            <p>Cargando geometría y texturas de homologación desde source/untitled.glb para el banco de inspección.</p>
+            <div class="pista-carga">
+                <div class="relleno-carga" id="barraProgreso"></div>
+            </div>
+            <div class="estado-carga-texto" id="porcentajeCarga">0 % completado</div>
+            <div class="aviso-error" id="avisoError"></div>
+        </div>
+    </div>
+
+    <!-- Retículas espaciales proyectadas sobre las coordenadas reales del modelo 3D -->
+    <div class="marcadores-capa" id="capaMarcadores" aria-label="Puntos de inspección sobre el monoplaza"></div>
+
+    <!-- Interfaz perimetral de ingeniería -->
+    <main class="interfaz-homologacion">
+        <header class="cabecera-banco">
+            <div class="identidad-monoplaza">
+                <div class="dorsal-placa" aria-label="Dorsal número 3">3</div>
+                <div class="bloque-titulo">
+                    <h1>Oracle Red Bull Racing RB22</h1>
+                    <p class="subtitulo-homologacion">Banco de metrología Milton Keynes para Max Verstappen con unidad Red Bull Ford Powertrains</p>
+                </div>
+            </div>
+
+            <div class="acciones-entorno" role="toolbar" aria-label="Controles del banco de pruebas">
+                <button type="button" class="boton-accion" id="btnFlujo" aria-pressed="true">
+                    <span class="indicador-estado"></span>
+                    <span id="textoFlujo">Ocultar flujo de aire</span>
+                </button>
+                <button type="button" class="boton-accion" id="btnAmbiente" aria-pressed="false">
+                    <span class="indicador-estado"></span>
+                    <span id="textoAmbiente">Iluminar sala diurna</span>
+                </button>
+                <button type="button" class="boton-accion" id="btnPaneles" aria-pressed="false">
+                    <span class="indicador-estado"></span>
+                    <span id="textoPaneles">Despejar interfaz</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Columna técnica única (alineada a la izquierda, <60 caracteres por línea) -->
+        <section class="panel-lateral" aria-live="polite">
+            <span class="cota-referencia" id="cotaEstacion">Cota completa: 5400 mm de longitud total</span>
+            <h2 id="tituloEstacion">Arquitectura general FIA 2026</h2>
+            <p class="descripcion-estacion" id="textoEstacion">
+                El RB22 reduce la batalla a 3400 mm y la anchura total a 1900 mm. Combina aerodinámica activa de doble perfil con un reparto equitativo entre propulsión térmica y eléctrica.
+            </p>
+
+            <table class="tabla-especificaciones">
+                <tbody id="tablaDatos">
+                    <tr>
+                        <th scope="row">Batalla / anchura FIA</th>
+                        <td>3400 mm / 1900 mm</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Masa mínima homologada</th>
+                        <td>768 kg en orden de marcha</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Unidad de potencia</th>
+                        <td>Red Bull Ford DM01 (750 kW)</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Superficie y malla</th>
+                        <td id="materialEstacion">Compuesto de carbono (27 grupos)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Reglaje aerodinámico activo integrado en la misma columna -->
+            <div class="bloque-aerodinamica">
+                <div class="cabecera-aero">
+                    <strong>Aerodinámica activa 2026</strong>
+                    <span id="lecturaVelocidad">248 km/h en paso por curva</span>
+                </div>
+
+                <div class="selector-modo" role="radiogroup" aria-label="Modo aerodinámico">
+                    <button type="button" class="boton-modo" id="btnModoZ" role="radio" aria-checked="true">
+                        <strong>Modo Z en curva</strong>
+                        <span>Alta carga vertical</span>
+                    </button>
+                    <button type="button" class="boton-modo" id="btnModoX" role="radio" aria-checked="false">
+                        <strong>Modo X en recta</strong>
+                        <span>Baja resistencia</span>
+                    </button>
+                </div>
+
+                <div class="pista-barra" role="img" aria-label="Proporción entre motor térmico y eléctrico">
+                    <div class="segmento-termico" id="barraTermica"></div>
+                    <div class="segmento-electrico" id="barraElectrica"></div>
+                </div>
+                <div class="leyenda-reparto">
+                    <span id="textoTermico">V6 Mobil 1: 360 kW</span>
+                    <span id="textoElectrico">MGU-K Ford: 220 kW</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pie: navegación por cotas longitudinales del chasis -->
+        <footer class="estaciones-chasis">
+            <nav class="lista-estaciones" id="navEstaciones" aria-label="Estaciones de inspección del monoplaza"></nav>
+            <div class="guia-interaccion">
+                Arrastra para orbitar el RB22 o usa las teclas 1 a 6 para encuadrar cada estación.
+            </div>
+        </footer>
+    </main>
+
+    <!-- Importamos Three.js y los addons oficiales mediante CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        // Catálogo de estaciones basado en las coordenadas reales medidas en source/untitled.glb
+        const ESTACIONES = [
+            {
+                id: 'general',
+                nombre: 'Vista general de banco',
+                cotaCorto: 'Plano completo',
+                cotaLarga: 'Cota completa: 5400 mm de longitud total',
+                titulo: 'Arquitectura general FIA 2026',
+                descripcion: 'El RB22 reduce la batalla a 3400 mm y la anchura total a 1900 mm. Combina aerodinámica activa de doble perfil con un reparto equitativo entre propulsión térmica y eléctrica.',
+                camara: [4.3, 1.95, 4.25],
+                objetivo: [0, 0.42, 0.18],
+                anclaje: null,
+                datos: [
+                    ['Batalla / anchura FIA', '3400 mm / 1900 mm'],
+                    ['Masa mínima homologada', '768 kg en orden de marcha'],
+                    ['Unidad de potencia', 'Red Bull Ford DM01 (750 kW)'],
+                    ['Superficie y malla', 'Compuesto de carbono (27 grupos)']
+                ]
+            },
+            {
+                id: 'morro',
+                nombre: 'Morro y alerón delantero',
+                cotaCorto: 'Cota +2650 mm',
+                cotaLarga: 'Estación delantera: +2650 mm desde el centro del chasis',
+                titulo: 'Alerón delantero de tres elementos',
+                descripcion: 'Más estrecho en 100 mm para la normativa 2026, incorpora actuadores hidráulicos en los dos flaps superiores que abren el canal en recta y sellan el vórtice exterior hacia los frenos.',
+                camara: [1.65, 0.72, 4.15],
+                objetivo: [0, 0.25, 2.35],
+                anclaje: [0, 0.32, 2.68],
+                datos: [
+                    ['Anchura del plano frontal', '1800 mm (reducción de 100 mm)'],
+                    ['Deflexión en modo X', 'Apertura de hasta 32 grados'],
+                    ['Estructura de impacto', 'Panal de aluminio y carbono T1100'],
+                    ['Ruedas delanteras Pirelli', 'Llantas de 18 pulgadas con deflector']
+                ]
+            },
+            {
+                id: 'habitaculo',
+                nombre: 'Habitáculo y volante #3',
+                cotaCorto: 'Cota +660 mm',
+                cotaLarga: 'Estación de supervivencia: +660 mm (puesto de mando)',
+                titulo: 'Célula de supervivencia y volante LCD',
+                descripcion: 'Equipa el volante específico del RB22 con telemetría en pantalla LCD, levas de recuperación energética MGU-K y aro protector de titanio grado 5 integrado sobre el chasis.',
+                camara: [0.95, 1.18, 1.45],
+                objetivo: [0, 0.62, 0.58],
+                anclaje: [0, 0.72, 0.66],
+                datos: [
+                    ['Protección superior Halo', 'Titanio Ti-6Al-4V (carga 125 kN)'],
+                    ['Instrumentación del volante', 'Pantalla LCD con 22 ledes de régimen'],
+                    ['Arnés de retención', 'Seis puntos homologación FIA 8853'],
+                    ['Asignación de chasis', 'Max Verstappen (dorsal #3)']
+                ]
+            },
+            {
+                id: 'pontones',
+                nombre: 'Pontones y suelo Venturi',
+                cotaCorto: 'Cota +150 mm',
+                cotaLarga: 'Estación central: +150 mm (canal de admisión y fondo)',
+                titulo: 'Pontones con corte inferior y suelo parcial',
+                descripcion: 'Los radiadores inclinados liberan un canal profundo sobre el suelo de carbono. La nueva normativa modera el efecto suelo extremo y exige un fondo más plano con difusor controlado.',
+                camara: [2.85, 0.95, 0.55],
+                objetivo: [0.25, 0.38, 0.15],
+                anclaje: [0.68, 0.48, 0.15],
+                datos: [
+                    ['Geometría de entrada', 'Labio superior adelantado de alta presión'],
+                    ['Superficie de acabado', 'Tejido Jacquard cobalto mate'],
+                    ['Protección lateral', 'Doble cono antiintrusión de Zylon'],
+                    ['Refrigeración interna', 'Intercambiadores aire-agua de doble paso']
+                ]
+            },
+            {
+                id: 'potencia',
+                nombre: 'Admisión y motor Ford',
+                cotaCorto: 'Cota -420 mm',
+                cotaLarga: 'Estación de potencia: -420 mm (arquitectura híbrida)',
+                titulo: 'Unidad Red Bull Ford Powertrains',
+                descripcion: 'Desarrollada en Milton Keynes junto a Ford Racing. Suprime el MGU-H y triplica la potencia eléctrica del MGU-K hasta 350 kW, alimentada por combustible sostenible al 100 %.',
+                camara: [1.95, 1.48, -1.05],
+                objetivo: [0, 0.82, -0.35],
+                anclaje: [0, 1.08, -0.22],
+                datos: [
+                    ['Motor térmico V6', '1600 cc turbo a 15 000 rpm (400 kW)'],
+                    ['Recuperación MGU-K', '350 kW acoplados al cigüeñal'],
+                    ['Energía recuperada por vuelta', '8,5 MJ en frenada regenerativa'],
+                    ['Combustible y lubricación', 'Mobil 1 sintético cero emisiones netas']
+                ]
+            },
+            {
+                id: 'zaga',
+                nombre: 'Alerón trasero y difusor',
+                cotaCorto: 'Cota -2300 mm',
+                cotaLarga: 'Estación posterior: -2300 mm (extracción y baliza FIA)',
+                titulo: 'Alerón trasero activo y baliza de lluvia',
+                descripcion: 'Prescinde del antiguo plano inferior (beam wing) para reducir la estela turbulenta hacia el coche perseguidor, incorporando descarga activa sincronizada con el alerón frontal.',
+                camara: [-2.15, 1.15, -3.85],
+                objetivo: [0, 0.55, -1.85],
+                anclaje: [0, 0.78, -2.32],
+                datos: [
+                    ['Actuación en recta', 'Apertura simultánea con el tren delantero'],
+                    ['Supresión de estela', 'Eliminación del plano inferior beam wing'],
+                    ['Baliza óptica central', 'Matriz LED homologada para modo lluvia'],
+                    ['Frenos traseros', 'Discos de carbono ventilados con freno por cable']
+                ]
+            }
+        ];
+
+        // 1. Inicializar la escena y el color de fondo (Bóveda Cobalto Milton Keynes)
+        const scene = new THREE.Scene();
+        const colorBoveda = new THREE.Color(0x081538);
+        const colorClaro = new THREE.Color(0xDCE3EC);
+        scene.background = colorBoveda.clone();
+        scene.fog = new THREE.FogExp2(0x081538, 0.036);
+
+        // 2. Configurar la cámara (perspectiva) con compensación de encuadre para el panel izquierdo
+        const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(4.3, 1.95, 4.25);
+
+        let vistaLimpia = false;
+        function actualizarEncuadreCamara() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            camera.aspect = w / h;
+            if (!vistaLimpia && w > 960) {
+                // Desplaza el centro óptico hacia los dos tercios derechos para no solapar con la ficha izquierda
+                const desplazamientoX = Math.round(Math.min(w * 0.13, 190));
+                camera.setViewOffset(w, h, -desplazamientoX, 0, w, h);
+            } else {
+                camera.clearViewOffset();
+            }
+            camera.updateProjectionMatrix();
+        }
+        actualizarEncuadreCamara();
+
+        // 3. Configurar el renderizador WebGL con soporte de color correcto para texturas
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.outputColorSpace = THREE.SRGBColorSpace; // Vital para que las texturas se vean con sus colores reales
+        document.body.appendChild(renderer.domElement);
+
+        // 4. Añadir controles de órbita para mover el modelo con el ratón
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.maxPolarAngle = Math.PI / 2 - 0.015; // Evita atravesar el plano del suelo de calibración
+        controls.minDistance = 1.25;
+        controls.maxDistance = 14;
+        controls.target.set(0, 0.42, 0.18);
+
+        // 5. Configurar la iluminación de la escena (conservando la intensidad sobre el auto y sumando luz de contorno)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.55);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.1);
+        directionalLight.position.set(5, 10, 7);
+        scene.add(directionalLight);
+
+        const rimLight = new THREE.DirectionalLight(0xdbeafe, 1.1);
+        rimLight.position.set(-6, 4, -6);
+        scene.add(rimLight);
+
+        // 5b. Plataforma de metrología FIA bajo el auto (el modelo del auto permanece intacto)
+        const grupoPlataforma = new THREE.Group();
+        grupoPlataforma.position.y = -0.032; // Justo al ras de los neumáticos Pirelli
+        scene.add(grupoPlataforma);
+
+        function crearPlataformaMetrologia() {
+            const rejilla = new THREE.GridHelper(16, 32, 0x3b5998, 0x182b59);
+            rejilla.material.transparent = true;
+            rejilla.material.opacity = 0.42;
+            grupoPlataforma.add(rejilla);
+
+            // Rectángulo de huella normativa FIA 2026: 1,90 m de ancho por 5,40 m de largo
+            const anchoFIA = 1.92;
+            const zFrente = 2.96;
+            const zZaga = -2.48;
+            const puntosMarco = [
+                new THREE.Vector3(-anchoFIA / 2, 0.003, zZaga),
+                new THREE.Vector3(anchoFIA / 2, 0.003, zZaga),
+                new THREE.Vector3(anchoFIA / 2, 0.003, zFrente),
+                new THREE.Vector3(-anchoFIA / 2, 0.003, zFrente),
+                new THREE.Vector3(-anchoFIA / 2, 0.003, zZaga)
+            ];
+            const geoMarco = new THREE.BufferGeometry().setFromPoints(puntosMarco);
+            const matMarco = new THREE.LineBasicMaterial({
+                color: 0xF3B108,
+                transparent: true,
+                opacity: 0.72
+            });
+            grupoPlataforma.add(new THREE.Line(geoMarco, matMarco));
+
+            // Anillo perimetral de plataforma giratoria de inspección
+            const geoAnillo = new THREE.RingGeometry(3.35, 3.38, 96);
+            geoAnillo.rotateX(-Math.PI / 2);
+            const matAnillo = new THREE.MeshBasicMaterial({
+                color: 0x9FB0C9,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.28
+            });
+            const mallaAnillo = new THREE.Mesh(geoAnillo, matAnillo);
+            mallaAnillo.position.set(0, 0.002, 0.2);
+            grupoPlataforma.add(mallaAnillo);
+        }
+        crearPlataformaMetrologia();
+
+        // 5c. Sistema de líneas de corriente de túnel de viento alrededor del RB22
+        const grupoFlujo = new THREE.Group();
+        scene.add(grupoFlujo);
+        const estelasFlujo = [];
+        let flujoActivo = true;
+        let modoRectaX = false;
+
+        function crearEstelasAerodinamicas() {
+            const perfiles = [
+                { x: 0.0, yBase: 0.26, yCima: 1.24, ySalida: 0.88, color: 0xF3B108 },
+                { x: -0.28, yBase: 0.24, yCima: 0.86, ySalida: 0.78, color: 0xF2F5FA },
+                { x: 0.28, yBase: 0.24, yCima: 0.86, ySalida: 0.78, color: 0xF2F5FA },
+                { x: -0.62, yBase: 0.20, yCima: 0.56, ySalida: 0.52, color: 0x60A5FA },
+                { x: 0.62, yBase: 0.20, yCima: 0.56, ySalida: 0.52, color: 0x60A5FA },
+                { x: -0.88, yBase: 0.32, yCima: 0.42, ySalida: 0.38, color: 0xE31837 },
+                { x: 0.88, yBase: 0.32, yCima: 0.42, ySalida: 0.38, color: 0xE31837 }
+            ];
+
+            perfiles.forEach((p, idx) => {
+                const curva = new THREE.CatmullRomCurve3([
+                    new THREE.Vector3(p.x * 0.75, p.yBase, 3.8),
+                    new THREE.Vector3(p.x * 0.85, p.yBase + 0.06, 2.5),
+                    new THREE.Vector3(p.x * 1.05, p.yCima * 0.82, 0.9),
+                    new THREE.Vector3(p.x * 0.95, p.yCima, -0.5),
+                    new THREE.Vector3(p.x * 0.82, p.ySalida, -2.35),
+                    new THREE.Vector3(p.x * 0.90, p.ySalida + 0.22, -3.9)
+                ]);
+
+                const puntos = curva.getPoints(90);
+                const geoBase = new THREE.BufferGeometry().setFromPoints(puntos);
+                const matBase = new THREE.LineBasicMaterial({
+                    color: p.color,
+                    transparent: true,
+                    opacity: 0.16
+                });
+                grupoFlujo.add(new THREE.Line(geoBase, matBase));
+
+                const longPulso = 18;
+                const geoPulso = new THREE.BufferGeometry();
+                const posicionesPulso = new Float32Array(longPulso * 3);
+                geoPulso.setAttribute('position', new THREE.BufferAttribute(posicionesPulso, 3));
+                const matPulso = new THREE.LineBasicMaterial({
+                    color: p.color,
+                    transparent: true,
+                    opacity: 0.85
+                });
+                const lineaPulso = new THREE.Line(geoPulso, matPulso);
+                grupoFlujo.add(lineaPulso);
+
+                estelasFlujo.push({
+                    curva,
+                    lineaPulso,
+                    longPulso,
+                    fase: (idx * 0.17) % 1
+                });
+            });
+        }
+        crearEstelasAerodinamicas();
+
+        // 6. Cargar el archivo .glb apuntando a la ruta correcta 'source/untitled.glb'
+        // Se conserva el auto tal cual está (sin modificar mallas, escalas ni texturas)
+        const loader = new GLTFLoader();
+        const barraProgreso = document.getElementById('barraProgreso');
+        const porcentajeCarga = document.getElementById('porcentajeCarga');
+        const veloApertura = document.getElementById('veloApertura');
+        const avisoError = document.getElementById('avisoError');
+
+        loader.load(
+            'source/untitled.glb',
+            function (gltf) {
+                const model = gltf.scene;
+                scene.add(model);
+                barraProgreso.style.width = '100%';
+                porcentajeCarga.textContent = '100 % completado';
+                setTimeout(() => {
+                    veloApertura.classList.add('oculto');
+                }, 220);
+                console.log('Modelo Red Bull RB22 cargado con éxito');
+            },
+            function (xhr) {
+                if (xhr.total > 0) {
+                    const pct = Math.min(100, Math.round((xhr.loaded / xhr.total) * 100));
+                    barraProgreso.style.width = pct + '%';
+                    porcentajeCarga.textContent = pct + ' % del modelo cargado';
+                }
+            },
+            function (error) {
+                console.error('Error al cargar el archivo .glb:', error);
+                avisoError.style.display = 'block';
+                avisoError.textContent = 'No se pudo leer source/untitled.glb. Inicia un servidor local en esta carpeta (por ejemplo: python3 -m http.server 8080) y recarga la página.';
+            }
+        );
+
+        // Construir botones de estaciones y retículas 3D discretas
+        const navEstaciones = document.getElementById('navEstaciones');
+        const capaMarcadores = document.getElementById('capaMarcadores');
+        const elementosMarcador = [];
+        let estacionActual = 'general';
+
+        // Interpolación suave de cámara activada únicamente cuando el usuario elige una estación
+        let transicionCamara = null;
+        controls.addEventListener('start', () => {
+            transicionCamara = null;
+        });
+
+        function seleccionarEstacion(idEstacion) {
+            const est = ESTACIONES.find(item => item.id === idEstacion);
+            if (!est) return;
+            estacionActual = est.id;
+
+            document.getElementById('cotaEstacion').textContent = est.cotaLarga;
+            document.getElementById('tituloEstacion').textContent = est.titulo;
+            document.getElementById('textoEstacion').textContent = est.descripcion;
+
+            const tbody = document.getElementById('tablaDatos');
+            tbody.innerHTML = est.datos.map(([clave, valor]) => `
+                <tr>
+                    <th scope="row">${clave}</th>
+                    <td>${valor}</td>
+                </tr>
+            `).join('');
+
+            document.querySelectorAll('.boton-estacion').forEach(btn => {
+                btn.setAttribute('aria-current', btn.dataset.id === est.id ? 'true' : 'false');
+            });
+            elementosMarcador.forEach(item => {
+                item.nodo.dataset.activo = item.id === est.id ? 'true' : 'false';
+            });
+
+            transicionCamara = {
+                inicioPos: camera.position.clone(),
+                finPos: new THREE.Vector3(...est.camara),
+                inicioObj: controls.target.clone(),
+                finObj: new THREE.Vector3(...est.objetivo),
+                progreso: 0
+            };
+        }
+
+        ESTACIONES.forEach(est => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'boton-estacion';
+            btn.dataset.id = est.id;
+            btn.setAttribute('aria-current', est.id === estacionActual ? 'true' : 'false');
+            btn.innerHTML = `
+                <span class="cota-mini">${est.cotaCorto}</span>
+                <span class="nombre-estacion">${est.nombre}</span>
+            `;
+            btn.addEventListener('click', () => seleccionarEstacion(est.id));
+            navEstaciones.appendChild(btn);
+
+            if (est.anclaje) {
+                const marcador = document.createElement('button');
+                marcador.type = 'button';
+                marcador.className = 'anclaje-3d';
+                marcador.dataset.activo = 'false';
+                marcador.setAttribute('aria-label', `Enfocar ${est.nombre.toLowerCase()} (${est.cotaCorto})`);
+                marcador.innerHTML = `<span class="etiqueta-anclaje">${est.cotaCorto}: ${est.nombre}</span>`;
+                marcador.addEventListener('click', () => seleccionarEstacion(est.id));
+                capaMarcadores.appendChild(marcador);
+
+                elementosMarcador.push({
+                    id: est.id,
+                    nodo: marcador,
+                    posicion3D: new THREE.Vector3(...est.anclaje)
+                });
+            }
+        });
+
+        // Controles de la barra superior y reglaje aerodinámico
+        const btnFlujo = document.getElementById('btnFlujo');
+        const textoFlujo = document.getElementById('textoFlujo');
+        function alternarFlujo() {
+            flujoActivo = !flujoActivo;
+            grupoFlujo.visible = flujoActivo;
+            btnFlujo.setAttribute('aria-pressed', String(flujoActivo));
+            textoFlujo.textContent = flujoActivo ? 'Ocultar flujo de aire' : 'Simular flujo de aire';
+        }
+        btnFlujo.addEventListener('click', alternarFlujo);
+
+        const btnAmbiente = document.getElementById('btnAmbiente');
+        const textoAmbiente = document.getElementById('textoAmbiente');
+        let ambienteClaro = false;
+        function alternarAmbiente() {
+            ambienteClaro = !ambienteClaro;
+            document.body.dataset.ambiente = ambienteClaro ? 'claro' : 'boveda';
+            scene.background.copy(ambienteClaro ? colorClaro : colorBoveda);
+            scene.fog.color.copy(ambienteClaro ? colorClaro : colorBoveda);
+            btnAmbiente.setAttribute('aria-pressed', String(ambienteClaro));
+            textoAmbiente.textContent = ambienteClaro ? 'Volver a bóveda nocturna' : 'Iluminar sala diurna';
+        }
+        btnAmbiente.addEventListener('click', alternarAmbiente);
+
+        const btnPaneles = document.getElementById('btnPaneles');
+        const textoPaneles = document.getElementById('textoPaneles');
+        function alternarPaneles() {
+            vistaLimpia = !vistaLimpia;
+            document.body.classList.toggle('vista-limpia', vistaLimpia);
+            btnPaneles.setAttribute('aria-pressed', String(vistaLimpia));
+            textoPaneles.textContent = vistaLimpia ? 'Mostrar paneles técnicos' : 'Despejar interfaz';
+            actualizarEncuadreCamara();
+        }
+        btnPaneles.addEventListener('click', alternarPaneles);
+
+        const btnModoZ = document.getElementById('btnModoZ');
+        const btnModoX = document.getElementById('btnModoX');
+        function cambiarModoAerodinamico(activarRectaX) {
+            modoRectaX = activarRectaX;
+            btnModoZ.setAttribute('aria-checked', String(!modoRectaX));
+            btnModoX.setAttribute('aria-checked', String(modoRectaX));
+
+            document.getElementById('lecturaVelocidad').textContent = modoRectaX
+                ? '346 km/h en recta con descarga'
+                : '248 km/h en paso por curva';
+            document.getElementById('barraTermica').style.width = modoRectaX ? '53%' : '62%';
+            document.getElementById('barraElectrica').style.width = modoRectaX ? '47%' : '38%';
+            document.getElementById('textoTermico').textContent = modoRectaX
+                ? 'V6 Mobil 1: 400 kW'
+                : 'V6 Mobil 1: 360 kW';
+            document.getElementById('textoElectrico').textContent = modoRectaX
+                ? 'MGU-K Ford: 350 kW (empuje máximo)'
+                : 'MGU-K Ford: 220 kW';
+        }
+        btnModoZ.addEventListener('click', () => cambiarModoAerodinamico(false));
+        btnModoX.addEventListener('click', () => cambiarModoAerodinamico(true));
+
+        // Atajos de teclado accesibles (1-6 para estaciones)
+        window.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            const indice = parseInt(e.key, 10) - 1;
+            if (indice >= 0 && indice < ESTACIONES.length) {
+                seleccionarEstacion(ESTACIONES[indice].id);
+            }
+        });
+
+        // 7. Adaptar el visor si se redimensiona la ventana del navegador
+        window.addEventListener('resize', onWindowResize);
+
+        function onWindowResize() {
+            actualizarEncuadreCamara();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // 8. Bucle de renderizado continuo
+        const vectorProyeccion = new THREE.Vector3();
+        let relojAnterior = performance.now();
+
+        function animate(ahora = performance.now()) {
+            requestAnimationFrame(animate);
+            const dt = Math.min((ahora - relojAnterior) / 1000, 0.1);
+            relojAnterior = ahora;
+
+            if (transicionCamara) {
+                transicionCamara.progreso = Math.min(1, transicionCamara.progreso + dt * 2.2);
+                const t = 1 - Math.pow(1 - transicionCamara.progreso, 3);
+                camera.position.lerpVectors(transicionCamara.inicioPos, transicionCamara.finPos, t);
+                controls.target.lerpVectors(transicionCamara.inicioObj, transicionCamara.finObj, t);
+                if (transicionCamara.progreso >= 1) {
+                    transicionCamara = null;
+                }
+            }
+
+            controls.update();
+
+            if (flujoActivo) {
+                const velocidad = modoRectaX ? 0.68 : 0.36;
+                estelasFlujo.forEach(estela => {
+                    estela.fase = (estela.fase + dt * velocidad) % 1;
+                    const attrPos = estela.lineaPulso.geometry.attributes.position;
+                    for (let i = 0; i < estela.longPulso; i++) {
+                        const u = (estela.fase + i * 0.0085) % 1;
+                        const pt = estela.curva.getPointAt(u);
+                        const caidaModoX = (modoRectaX && u > 0.55) ? (u - 0.55) * 0.22 : 0;
+                        attrPos.setXYZ(i, pt.x, pt.y - caidaModoX, pt.z);
+                    }
+                    attrPos.needsUpdate = true;
+                });
+            }
+
+            // Proyectar retículas 3D respetando el frustum de la cámara
+            const ancho = window.innerWidth;
+            const alto = window.innerHeight;
+            elementosMarcador.forEach(item => {
+                vectorProyeccion.copy(item.posicion3D).project(camera);
+                if (vectorProyeccion.z < 1) {
+                    const x = (vectorProyeccion.x * 0.5 + 0.5) * ancho;
+                    const y = (-(vectorProyeccion.y * 0.5) + 0.5) * alto;
+                    item.nodo.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+                    item.nodo.style.display = 'flex';
+                } else {
+                    item.nodo.style.display = 'none';
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
