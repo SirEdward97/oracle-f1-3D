@@ -983,7 +983,7 @@
         }
         crearEstelasAerodinamicas();
 
-        // 6. Cargar el archivo .glb apuntando a la ruta correcta 'source/untitled.glb'
+        // 6. Cargar el archivo .glb compatible tanto con GitHub Pages (raíz) como con la subcarpeta
         // Se conserva el auto tal cual está (sin modificar mallas, escalas ni texturas)
         const loader = new GLTFLoader();
         const barraProgreso = document.getElementById('barraProgreso');
@@ -991,31 +991,49 @@
         const veloApertura = document.getElementById('veloApertura');
         const avisoError = document.getElementById('avisoError');
 
-        loader.load(
-            'source/untitled.glb',
-            function (gltf) {
-                const model = gltf.scene;
-                scene.add(model);
-                barraProgreso.style.width = '100%';
-                porcentajeCarga.textContent = '100 % completado';
-                setTimeout(() => {
-                    veloApertura.classList.add('oculto');
-                }, 220);
-                console.log('Modelo Red Bull RB22 cargado con éxito');
-            },
-            function (xhr) {
-                if (xhr.total > 0) {
-                    const pct = Math.min(100, Math.round((xhr.loaded / xhr.total) * 100));
-                    barraProgreso.style.width = pct + '%';
-                    porcentajeCarga.textContent = pct + ' % del modelo cargado';
+        const RUTAS_MODELO = [
+            './2026-redbull-rb22/source/untitled.glb',
+            './source/untitled.glb'
+        ];
+
+        function cargarModeloConRespaldo(indiceRuta = 0) {
+            const rutaActual = RUTAS_MODELO[indiceRuta];
+            loader.load(
+                rutaActual,
+                function (gltf) {
+                    const model = gltf.scene;
+                    scene.add(model);
+                    barraProgreso.style.width = '100%';
+                    porcentajeCarga.textContent = '100 % completado';
+                    setTimeout(() => {
+                        veloApertura.classList.add('oculto');
+                    }, 220);
+                    console.log('Modelo Red Bull RB22 cargado con éxito desde:', rutaActual);
+                },
+                function (xhr) {
+                    if (xhr.total > 0) {
+                        const pct = Math.min(100, Math.round((xhr.loaded / xhr.total) * 100));
+                        barraProgreso.style.width = pct + '%';
+                        porcentajeCarga.textContent = pct + ' % del modelo cargado';
+                    } else if (xhr.loaded > 0) {
+                        const mb = (xhr.loaded / (1024 * 1024)).toFixed(1);
+                        barraProgreso.style.width = '65%';
+                        porcentajeCarga.textContent = mb + ' MB descargados';
+                    }
+                },
+                function (error) {
+                    if (indiceRuta + 1 < RUTAS_MODELO.length) {
+                        cargarModeloConRespaldo(indiceRuta + 1);
+                        return;
+                    }
+                    console.error('Error al cargar el archivo .glb:', error);
+                    avisoError.style.display = 'block';
+                    avisoError.textContent = 'No se pudo leer 2026-redbull-rb22/source/untitled.glb. Verifica que la carpeta 2026-redbull-rb22/source esté publicada en el repositorio.';
                 }
-            },
-            function (error) {
-                console.error('Error al cargar el archivo .glb:', error);
-                avisoError.style.display = 'block';
-                avisoError.textContent = 'No se pudo leer source/untitled.glb. Inicia el servidor local con Node.js (ejecuta: node server.js) y recarga la página.';
-            }
-        );
+            );
+        }
+
+        cargarModeloConRespaldo();
 
         // Construir botones de estaciones y retículas 3D discretas
         const navEstaciones = document.getElementById('navEstaciones');
