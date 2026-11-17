@@ -1,0 +1,10 @@
+{
+  "name": "2026-redbull-rb22-viewer",
+  "version": "1.0.0",
+  "description": "Visor 3D de homologación para el Oracle Red Bull Racing RB22",
+  "main": "server.js",
+  "author": "SrEdward :) ",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

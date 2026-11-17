@@ -1013,7 +1013,7 @@
             function (error) {
                 console.error('Error al cargar el archivo .glb:', error);
                 avisoError.style.display = 'block';
-                avisoError.textContent = 'No se pudo leer source/untitled.glb. Inicia un servidor local en esta carpeta (por ejemplo: python3 -m http.server 8080) y recarga la página.';
+                avisoError.textContent = 'No se pudo leer source/untitled.glb. Inicia el servidor local con Node.js (ejecuta: node server.js) y recarga la página.';
             }
         );
 
